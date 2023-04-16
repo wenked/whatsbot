@@ -12,7 +12,7 @@ datasource db {
 }
 
 model Whatsapp {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   name      String
   status     String
   serialized_id String
