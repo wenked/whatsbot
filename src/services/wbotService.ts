@@ -12,8 +12,10 @@ import makeWASocket, {
 	WAMessageContent,
 	WAMessageKey,
 	BaileysEventMap,
+	WASocket,
 } from '@adiwajshing/baileys';
 import pino from 'pino';
+import { PrismaClient, Whatsapp } from '@prisma/client';
 
 const useStore = !process.argv.includes('--no-store');
 const doReplies = !process.argv.includes('--no-reply');
@@ -26,6 +28,70 @@ const msgRetryCounterCache = new NodeCache();
 // can be written out to a file & read from it
 
 // start a connection
+
+type Session = WASocket & {
+	id?: number;
+};
+
+const sessions: Session[] = [];
+
+export const getWbot = (whatsappId: number): Session => {
+	const sessionIndex = sessions.findIndex((s) => s.id === whatsappId);
+
+	if (sessionIndex === -1) {
+		throw new Error('Session not found');
+	}
+	return sessions[sessionIndex];
+};
+
+export const removeWbot = async (whatsappId: number, isLogout = true): Promise<void> => {
+	try {
+		const sessionIndex = sessions.findIndex((s) => s.id === whatsappId);
+		if (sessionIndex !== -1) {
+			if (isLogout) {
+				sessions[sessionIndex].logout();
+				sessions[sessionIndex].ws.close();
+			}
+
+			sessions.splice(sessionIndex, 1);
+		}
+	} catch (err: any) {
+		console.error(err);
+		console.error(`Error in removeWbot: ${err?.message}`);
+	}
+};
+
+export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
+	try {
+		const { state, saveCreds } = await useMultiFileAuthState(`baileys_auth_info_${whatsapp.id}`);
+		const { version, isLatest } = await fetchLatestBaileysVersion();
+		console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`);
+
+		const sock = makeWASocket({
+			version,
+			printQRInTerminal: true,
+			auth: {
+				creds: state.creds,
+				/** caching makes the store faster to send/recv messages */
+				keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'error' })),
+			},
+			msgRetryCounterMap: {},
+			generateHighQualityLinkPreview: true,
+			logger: pino({ level: 'error' }),
+			markOnlineOnConnect: true,
+			// ignore all broadcast messages -- to receive the same
+			// comment the line below out
+			// shouldIgnoreJid: jid => isJidBroadcast(jid),
+			// implement to handle retries & poll updates
+		});
+
+		return sock;
+	} catch (error: unknown) {
+		console.error(error);
+		throw new Boom('Error in initWbot');
+	}
+};
+
 export const startSock = async () => {
 	try {
 		const { state, saveCreds } = await useMultiFileAuthState('baileys_auth_info');
@@ -50,18 +116,6 @@ export const startSock = async () => {
 			// shouldIgnoreJid: jid => isJidBroadcast(jid),
 			// implement to handle retries & poll updates
 		});
-
-		const sendMessageWTyping = async (msg: AnyMessageContent, jid: string) => {
-			await sock.presenceSubscribe(jid);
-			await delay(500);
-
-			await sock.sendPresenceUpdate('composing', jid);
-			await delay(2000);
-
-			await sock.sendPresenceUpdate('paused', jid);
-
-			await sock.sendMessage(jid, msg);
-		};
 
 		// the process function lets you process all events that just occurred
 		// efficiently in a batch
@@ -108,10 +162,6 @@ export const startSock = async () => {
 							}
 						}
 					} */
-				}
-
-				if (events['chats.delete']) {
-					console.log('chats deleted ', events['chats.delete']);
 				}
 			}
 		);
