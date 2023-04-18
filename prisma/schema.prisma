@@ -17,6 +17,7 @@ model Whatsapp {
   name      String
   status     String
   serialized_id String
+  qr_code String     @db.VarChar(1000)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -33,7 +34,7 @@ model Group {
 model Commands {
   id        Int      @id @default(autoincrement())
   command_name      String
-  command_content String
+  command_content String   @db.VarChar(2000)
   group  Group @relation(fields: [group_id], references: [id])
   group_id Int
   createdAt DateTime @default(now())
