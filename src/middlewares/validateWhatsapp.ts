@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 
-export const validateWhatsapp = (req: Request, res: Response, next: NextFunction) => {
+export const validateStoreWhatsapp = (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const schema = z.object({
 			name: z
@@ -15,6 +15,21 @@ export const validateWhatsapp = (req: Request, res: Response, next: NextFunction
 		});
 
 		schema.parse(req.body);
+
+		next();
+	} catch (error: any) {
+		console.log(error);
+		res.status(400).json({ message: error.message });
+	}
+};
+
+export const validateDeleteWhatsapp = (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const schema = z.object({
+			id: z.string(),
+		});
+
+		schema.parse(req.params);
 
 		next();
 	} catch (error: any) {

@@ -2,12 +2,13 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotev from 'dotenv';
-import { startSock } from './services/wbotService';
+
 import socket from './services/socket';
 import { PrismaClient } from '@prisma/client';
 import { initWbot } from './services/wbotService';
-import { validateWhatsapp } from './middlewares/validateWhatsapp';
-import { storeWhatsApp } from './controllers/WhatsAppController';
+import { validateStoreWhatsapp, validateDeleteWhatsapp } from './middlewares/validateWhatsapp';
+import { storeWhatsApp, deleteWhatsApp } from './controllers/WhatsAppController';
+import { wbotBotMessageListener } from './services/wbotMessageListener';
 
 dotev.config();
 
@@ -20,7 +21,8 @@ app.get('/', (req, res) => {
 	res.send('Heylo');
 });
 
-app.post('/whatsapp/store', validateWhatsapp, storeWhatsApp);
+app.post('/whatsapp/store', validateStoreWhatsapp, storeWhatsApp);
+app.delete('/whatsapp/delete/:id', validateDeleteWhatsapp, deleteWhatsApp);
 
 process.on('uncaughtException', (err) => {
 	console.log('uncaughtException');
@@ -36,12 +38,19 @@ socket.init(server);
 const startWhatsappSessions = async () => {
 	try {
 		const whatsappSessions = await prisma.whatsapp.findMany();
+
 		for (const whatsapp of whatsappSessions) {
-			await initWbot(whatsapp);
+			try {
+				const sock = await initWbot(whatsapp);
+				wbotBotMessageListener(sock);
+				console.log('koe xd');
+			} catch (error: any) {
+				console.log(error);
+				console.log(`Error in startWhatsappSessions: ${error?.message}`);
+			}
 		}
 	} catch (error) {
 		console.log(error);
 	}
 };
-
 startWhatsappSessions();

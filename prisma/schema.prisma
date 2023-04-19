@@ -16,8 +16,8 @@ model Whatsapp {
   id        Int      @id @default(autoincrement())
   name      String
   status     String
-  serialized_id String
-  qr_code String     @db.VarChar(1000)
+  serialized_id String?
+  qr_code String?     @db.VarChar(1000)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

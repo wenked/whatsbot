@@ -1,13 +1,14 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { initWbot } from '../services/wbotService';
+import { initWbot, removeWbot } from '../services/wbotService';
+import fs from 'fs';
+import path from 'path';
+const prisma = new PrismaClient();
 
 export const storeWhatsApp = async (req: Request, res: Response) => {
 	try {
-		const prisma = new PrismaClient();
-
 		const whatsapp = await prisma.whatsapp.create({
-			data: req.body,
+			data: { ...req.body, status: 'PENDING' },
 		});
 
 		await initWbot(whatsapp);
@@ -21,6 +22,35 @@ export const storeWhatsApp = async (req: Request, res: Response) => {
 
 		return res.status(500).json({
 			message: 'Error in storeWhatsApp',
+		});
+	}
+};
+
+export const deleteWhatsApp = async (req: Request, res: Response) => {
+	try {
+		await prisma.whatsapp.delete({
+			where: { id: Number(req.params.id) },
+		});
+
+		await removeWbot(Number(req.params.id));
+
+		const sessionDirectory = path.join(
+			__dirname,
+			`../../sessions/baileys_auth_info-${req.params.id}`
+		);
+
+		if (fs.existsSync(sessionDirectory)) {
+			fs.rmdirSync(sessionDirectory, { recursive: true });
+		}
+
+		return res.status(200).json({
+			message: 'WhatsApp session deleted',
+		});
+	} catch (error: any) {
+		console.error(error);
+		console.error(`Error in deleteWhatsApp: ${error?.message}`);
+		return res.status(500).json({
+			message: 'Error in deleteWhatsApp',
 		});
 	}
 };
