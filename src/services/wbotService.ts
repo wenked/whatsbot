@@ -107,6 +107,8 @@ export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
 							initWbot(whatsapp);
 						} else {
 							console.log('Connection closed. You are logged out.');
+							removeWbot(whatsapp.id, false);
+							initWbot(whatsapp);
 						}
 					}
 

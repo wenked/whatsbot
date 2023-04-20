@@ -25,6 +25,7 @@ model Whatsapp {
 model Group {
   id        Int      @id @default(autoincrement())
   name      String
+  owner_serialized_id String
   group_id String
   commands Commands[]
   createdAt DateTime @default(now())

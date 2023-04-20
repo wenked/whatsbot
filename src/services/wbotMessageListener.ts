@@ -1,3 +1,6 @@
+import sendMessageWTyping from '../utils/sendMessageWtyping';
+import handleAddCommand from './handleAddCommand';
+import handleGroup from './handleGroups';
 import { Session } from './wbotService';
 import {
 	MessageUpsertType,
@@ -6,6 +9,7 @@ import {
 	WAMessage,
 	getContentType,
 } from '@adiwajshing/baileys';
+import { PrismaClient } from '@prisma/client';
 
 interface ImessageUpsert {
 	messages: proto.IWebMessageInfo[];
@@ -16,6 +20,9 @@ interface IMe {
 	name: string;
 	id: string;
 }
+
+const prisma = new PrismaClient();
+const commands = ['!add', '!remove', '!list', '!help'];
 
 const getTypeMessage = (msg: proto.IWebMessageInfo): string => {
 	if (!msg.message) return 'unknown';
@@ -75,14 +82,109 @@ export const wbotBotMessageListener = async (sock: Session) => {
 			messages.forEach(async (msg) => {
 				if (!msg.message) return;
 
+				if (!msg?.message?.conversation) return;
+
+				const msgText = msg?.message?.conversation;
 				const isValid = isValidMsg(msg);
 				if (!isValid) {
 					return;
 				}
 
-				const remoteId = msg.key.remoteJid;
+				const remoteJid = msg.key.remoteJid;
+				if (!remoteJid) return;
 
-				const isGroup = remoteId.endsWith('@g.us');
+				const isGroup = remoteJid.endsWith('@g.us');
+
+				console.log({ isGroup });
+
+				if (!isGroup) {
+					console.log(`Não é grupo: ${remoteJid}`);
+					return;
+				}
+
+				const groupMeta = await sock.groupMetadata(remoteJid);
+				console.log({ groupMeta });
+
+				const group = await handleGroup({
+					sock,
+					groupData: groupMeta,
+					serializedId: sock.user?.id || '',
+				});
+				console.log({ group });
+				if (!msg.key.fromMe) {
+					const isMasterCommand = commands.some((cmd) => msgText?.startsWith(cmd));
+					const isNormalCommand = msgText?.startsWith('$');
+
+					if (isNormalCommand && group) {
+						const command = msgText?.split(' ')[0];
+
+						const dbCommand = await prisma.commands.findFirst({
+							where: {
+								command_name: command,
+							},
+						});
+
+						if (dbCommand) {
+							console.log({ dbCommand });
+							await sendMessageWTyping(
+								{
+									text: dbCommand.command_content,
+								},
+								remoteJid,
+								sock
+							);
+						}
+
+						return;
+					}
+
+					if (isMasterCommand && group) {
+						console.log('é comando');
+						const command = msgText?.split(' ')[0];
+						const commandType = msgText?.split(' ')[1];
+						const commandContent = msgText?.split(' ')[2];
+						console.log({ command, commandContent, commandType });
+						// get all string between quotes and remove quotes
+
+						const regex = /"(.*?)"/g;
+						const matchesCommand = msgText?.match(regex);
+
+						console.log({ matchesCommand });
+						if (!matchesCommand) return;
+						const formatedCommand = matchesCommand.map((cmd) => cmd.replace(/"/g, ''));
+						switch (command) {
+							case '!add':
+								const newCommand = await handleAddCommand({
+									command: commandType,
+									command_content: formatedCommand[0],
+									groupId: group.id,
+								});
+
+								if (newCommand) {
+									await sendMessageWTyping(
+										{
+											text: `Comando adicionado com sucesso`,
+										},
+										remoteJid,
+										sock
+									);
+								}
+								console.log({ newCommand });
+							default:
+								break;
+						}
+
+						return;
+					}
+
+					await sendMessageWTyping(
+						{
+							text: msgText || 'Não entendi',
+						},
+						remoteJid,
+						sock
+					);
+				}
 			});
 		});
 	} catch (error: any) {

@@ -9,7 +9,7 @@ const sendMessageWTyping = async (msg: AnyMessageContent, jid: string, sock: WAS
 
 	await sock.sendPresenceUpdate('paused', jid);
 
-	await sock.sendMessage(jid, msg);
+	const teste = await sock.sendMessage(jid, msg);
 };
 
 export default sendMessageWTyping;
