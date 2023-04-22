@@ -23,7 +23,7 @@ interface IMe {
 }
 
 const prisma = new PrismaClient();
-const commands = ['!add', '!del', '!list', '!help', '!mention', '!dice', '!letter'];
+const commands = ['!add', '!del', '!edit', '!list', '!help', '!mention', '!dice', '!letter'];
 
 const getTypeMessage = (msg: proto.IWebMessageInfo): string => {
 	if (!msg.message) return 'unknown';
@@ -101,6 +101,11 @@ export const wbotBotMessageListener = async (sock: Session) => {
 
 				const groupMeta = await sock.groupMetadata(remoteJid);
 				const participants = groupMeta?.participants;
+
+				const isAdminOrSuperAdmin = participants?.some(
+					(p) => p.id === msg.key.participant && (p.admin === 'admin' || p.admin === 'superadmin')
+				);
+				console.log({ isAdminOrSuperAdmin });
 				console.log(JSON.stringify(groupMeta, undefined, 2));
 
 				const group = await handleGroup({
