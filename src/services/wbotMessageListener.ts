@@ -23,7 +23,7 @@ interface IMe {
 }
 
 const prisma = new PrismaClient();
-const commands = ['!add', '!del', '!list', '!help', '!mention'];
+const commands = ['!add', '!del', '!list', '!help', '!mention', '!dice', '!letter'];
 
 const getTypeMessage = (msg: proto.IWebMessageInfo): string => {
 	if (!msg.message) return 'unknown';
@@ -204,6 +204,27 @@ export const wbotBotMessageListener = async (sock: Session) => {
 							case '!list':
 								return;
 							case '!help':
+								return;
+							case '!dice':
+								const dice = Math.floor(Math.random() * 6) + 1;
+								await sendMessageWTyping(
+									{
+										text: `O número sorteado foi ${dice}`,
+									},
+									remoteJid,
+									sock
+								);
+								return;
+							case '!letter':
+								const letter = Math.floor(Math.random() * 26) + 1;
+								const letterString = String.fromCharCode(64 + letter);
+								await sendMessageWTyping(
+									{
+										text: `A letra sorteada foi ${letterString}`,
+									},
+									remoteJid,
+									sock
+								);
 								return;
 							default:
 								break;
