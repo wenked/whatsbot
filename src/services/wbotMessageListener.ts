@@ -196,10 +196,14 @@ export const wbotBotMessageListener = async (sock: Session) => {
 								});
 
 								await sock.sendMessage(remoteJid, {
-									text: mentionString,
+									text: 'domlimas \n' + mentionString,
 									mentions: participants?.map((p) => p.id),
 								});
 
+								return;
+							case '!list':
+								return;
+							case '!help':
 								return;
 							default:
 								break;
