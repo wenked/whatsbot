@@ -29,8 +29,8 @@ process.on('uncaughtException', (err) => {
 	console.error(err);
 });
 
-const server = app.listen(5000, () => {
-	console.log('Listening to 5000');
+const server = app.listen(5001, () => {
+	console.log('Listening to 5001');
 });
 
 socket.init(server);

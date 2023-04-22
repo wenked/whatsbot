@@ -10,6 +10,7 @@ import {
 	getContentType,
 } from '@adiwajshing/baileys';
 import { PrismaClient } from '@prisma/client';
+import handleDeleteCommand from './handleDeleteCommand';
 
 interface ImessageUpsert {
 	messages: proto.IWebMessageInfo[];
@@ -22,7 +23,7 @@ interface IMe {
 }
 
 const prisma = new PrismaClient();
-const commands = ['!add', '!remove', '!list', '!help'];
+const commands = ['!add', '!del', '!list', '!help', '!mention'];
 
 const getTypeMessage = (msg: proto.IWebMessageInfo): string => {
 	if (!msg.message) return 'unknown';
@@ -69,9 +70,7 @@ export const wbotBotMessageListener = async (sock: Session) => {
 	try {
 		console.log(`wbotBotMessageListener iniciado: ${sock.id}`);
 		sock.ev.on('messages.upsert', async (message: ImessageUpsert) => {
-			console.log('teste');
 			console.log('recv messages ', JSON.stringify(message, undefined, 2));
-			console.log('estou aquiiiiiiiiiii 1');
 
 			const messages = message.messages.filter(filterMessages).map((msg) => msg);
 
@@ -95,15 +94,14 @@ export const wbotBotMessageListener = async (sock: Session) => {
 
 				const isGroup = remoteJid.endsWith('@g.us');
 
-				console.log({ isGroup });
-
 				if (!isGroup) {
 					console.log(`Não é grupo: ${remoteJid}`);
 					return;
 				}
 
 				const groupMeta = await sock.groupMetadata(remoteJid);
-				console.log({ groupMeta });
+				const participants = groupMeta?.participants;
+				console.log(JSON.stringify(groupMeta, undefined, 2));
 
 				const group = await handleGroup({
 					sock,
@@ -114,7 +112,7 @@ export const wbotBotMessageListener = async (sock: Session) => {
 				if (!msg.key.fromMe) {
 					const isMasterCommand = commands.some((cmd) => msgText?.startsWith(cmd));
 					const isNormalCommand = msgText?.startsWith('$');
-
+					console.log({ isMasterCommand, isNormalCommand });
 					if (isNormalCommand && group) {
 						const command = msgText?.split(' ')[0];
 
@@ -146,17 +144,28 @@ export const wbotBotMessageListener = async (sock: Session) => {
 						console.log({ command, commandContent, commandType });
 						// get all string between quotes and remove quotes
 
-						const regex = /"(.*?)"/g;
-						const matchesCommand = msgText?.match(regex);
+						if (!commandType?.startsWith('$') && command === '!add') {
+							await sendMessageWTyping(
+								{
+									text: `Comandos devem começar com $`,
+								},
+								remoteJid,
+								sock
+							);
+							return;
+						}
 
-						console.log({ matchesCommand });
-						if (!matchesCommand) return;
-						const formatedCommand = matchesCommand.map((cmd) => cmd.replace(/"/g, ''));
 						switch (command) {
 							case '!add':
+								const regex = /"([^"]*)"/;
+								const matchesCommand = msgText?.match(regex);
+
+								console.log({ matchesCommand });
+								if (!matchesCommand) return;
+								const commandWithoutQuotes = matchesCommand.map((cmd) => cmd.replace(/"/g, ''));
 								const newCommand = await handleAddCommand({
 									command: commandType,
-									command_content: formatedCommand[0],
+									command_content: commandWithoutQuotes[0],
 									groupId: group.id,
 								});
 
@@ -170,6 +179,28 @@ export const wbotBotMessageListener = async (sock: Session) => {
 									);
 								}
 								console.log({ newCommand });
+							case '!del':
+								console.log('aqui');
+								const teste = await handleDeleteCommand({
+									command: commandType,
+									groupId: group.id,
+									sock,
+									remoteJid,
+								});
+
+								console.log({ teste });
+							case '!mention':
+								let mentionString = '';
+								participants?.forEach((p) => {
+									mentionString += `@${p.id.split('@')[0]} `;
+								});
+
+								await sock.sendMessage(remoteJid, {
+									text: mentionString,
+									mentions: participants?.map((p) => p.id),
+								});
+
+								return;
 							default:
 								break;
 						}

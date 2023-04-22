@@ -119,7 +119,7 @@ export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
 							},
 							data: {
 								status: 'CONNECTED',
-								qr_code: '',
+								qr_code: qr,
 							},
 						});
 						const sessionIndex = sessions.findIndex((s) => s.id === whatsapp.id);

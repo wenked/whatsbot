@@ -5,11 +5,13 @@ const sendMessageWTyping = async (msg: AnyMessageContent, jid: string, sock: WAS
 	await delay(500);
 
 	await sock.sendPresenceUpdate('composing', jid);
-	await delay(2000);
+	await delay(500);
 
 	await sock.sendPresenceUpdate('paused', jid);
 
-	const teste = await sock.sendMessage(jid, msg);
+	const sendedMsg = await sock.sendMessage(jid, msg);
+
+	return sendedMsg;
 };
 
 export default sendMessageWTyping;
