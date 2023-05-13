@@ -45,3 +45,17 @@ model Commands {
   @@index([group_id])
 }
 
+model Member {
+  id    Int     @id @default(autoincrement())
+  serialized_id String  @unique
+  name  String?
+  house  House    
+}
+
+enum House {
+  Slytherin
+  Gryffindor
+  Hufflepuff
+  Ravenclaw
+}
+
