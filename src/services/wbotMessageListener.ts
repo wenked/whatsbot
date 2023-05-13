@@ -141,7 +141,7 @@ export const wbotBotMessageListener = async (sock: Session) => {
 						return;
 					}
 
-					if (isMasterCommand && group) {
+					if (isMasterCommand && group && isAdminOrSuperAdmin) {
 						console.log('é comando');
 						const command = msgText?.split(' ')[0];
 						const commandType = msgText?.split(' ')[1];
@@ -207,6 +207,22 @@ export const wbotBotMessageListener = async (sock: Session) => {
 
 								return;
 							case '!list':
+								const normalCommands = await prisma.commands.findMany({
+									where: { group_id: group.id },
+								});
+
+								let adminComands = '*Comandos de ADMINS*\n';
+								commands.forEach((cmd) => (adminComands += `\n${cmd}`));
+
+								const commandsString = normalCommands.map((cmd) => cmd.command_name).join('\n');
+
+								await sendMessageWTyping(
+									{
+										text: adminComands + '\n' + commandsString,
+									},
+									remoteJid,
+									sock
+								);
 								return;
 							case '!help':
 								return;
