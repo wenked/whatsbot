@@ -10,10 +10,12 @@ interface handleDeleteCommandInterface {
 	groupId: number;
 	remoteJid: string;
 	sock: Session;
+	prisma: PrismaClient;
 }
 
 const handleDeleteCommand = async (params: handleDeleteCommandInterface) => {
 	try {
+		const prisma = params.prisma;
 		let commandExists = await prisma.commands.findFirst({
 			where: {
 				command_name: params.command,

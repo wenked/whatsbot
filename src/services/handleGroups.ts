@@ -6,12 +6,12 @@ interface handleGroupInterface {
 	sock: Session;
 	groupData: GroupMetadata;
 	serializedId: string;
+	prisma: PrismaClient;
 }
 
 const handleGroup = async (params: handleGroupInterface) => {
 	try {
-		const prisma = new PrismaClient();
-
+		const prisma = params.prisma;
 		let group = await prisma.group.findFirst({
 			where: {
 				owner_serialized_id: params.serializedId,

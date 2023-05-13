@@ -112,6 +112,7 @@ export const wbotBotMessageListener = async (sock: Session) => {
 					sock,
 					groupData: groupMeta,
 					serializedId: sock.user?.id || '',
+					prisma,
 				});
 				console.log({ group });
 				if (!msg.key.fromMe) {
@@ -172,6 +173,7 @@ export const wbotBotMessageListener = async (sock: Session) => {
 									command: commandType,
 									command_content: commandWithoutQuotes[0],
 									groupId: group.id,
+									prisma,
 								});
 
 								if (newCommand) {
@@ -183,7 +185,8 @@ export const wbotBotMessageListener = async (sock: Session) => {
 										sock
 									);
 								}
-								console.log({ newCommand });
+
+								return;
 							case '!del':
 								console.log('aqui');
 								const teste = await handleDeleteCommand({
@@ -191,9 +194,11 @@ export const wbotBotMessageListener = async (sock: Session) => {
 									groupId: group.id,
 									sock,
 									remoteJid,
+									prisma,
 								});
-
 								console.log({ teste });
+								return;
+
 							case '!mention':
 								let mentionString = '';
 								participants?.forEach((p) => {

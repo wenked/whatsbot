@@ -5,11 +5,12 @@ interface handleAddCommandInterface {
 	command: string;
 	groupId: number;
 	command_content: string;
+	prisma: PrismaClient;
 }
 
 const handleAddCommand = async (params: handleAddCommandInterface) => {
 	try {
-		const prisma = new PrismaClient();
+		const prisma = params.prisma;
 		let commandExists = await prisma.commands.findFirst({
 			where: {
 				command_name: params.command,
