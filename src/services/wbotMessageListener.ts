@@ -11,6 +11,7 @@ import {
 } from '@adiwajshing/baileys';
 import { PrismaClient } from '@prisma/client';
 import handleDeleteCommand from './handleDeleteCommand';
+import handleChangeGroupSettings from './handleCloseGroup';
 
 interface ImessageUpsert {
 	messages: proto.IWebMessageInfo[];
@@ -23,7 +24,18 @@ interface IMe {
 }
 
 const prisma = new PrismaClient();
-const commands = ['!add', '!del', '!edit', '!list', '!help', '!mention', '!dice', '!letter'];
+const commands = [
+	'!add',
+	'!del',
+	'!edit',
+	'!list',
+	'!help',
+	'!mention',
+	'!dice',
+	'!letter',
+	'!close',
+	'!open',
+];
 
 const getTypeMessage = (msg: proto.IWebMessageInfo): string => {
 	if (!msg.message) return 'unknown';
@@ -251,6 +263,23 @@ export const wbotBotMessageListener = async (sock: Session) => {
 									remoteJid,
 									sock
 								);
+								return;
+							case '!close':
+								await handleChangeGroupSettings({
+									sock,
+									groupData: groupMeta,
+									type: 'announcement',
+								});
+								console.log('grupo fechado com sucesso');
+								return;
+							case '!open':
+								await handleChangeGroupSettings({
+									sock,
+									groupData: groupMeta,
+									type: 'not_announcement',
+								});
+
+								console.log('grupo aberto com sucesso');
 								return;
 							default:
 								break;
