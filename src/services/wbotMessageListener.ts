@@ -12,6 +12,9 @@ import {
 import { PrismaClient } from '@prisma/client';
 import handleDeleteCommand from './handleDeleteCommand';
 import handleChangeGroupSettings from './handleCloseGroup';
+import handleAddHouseMember from './handleAddHouseMember';
+import handleDeleteHouseMember from './handleDeleteHouseMember';
+import handleEditHouseMember from './handleEditHouseMember';
 
 interface ImessageUpsert {
 	messages: proto.IWebMessageInfo[];
@@ -24,6 +27,8 @@ interface IMe {
 }
 
 const prisma = new PrismaClient();
+const houseNamesArray = ['sly', 'gryff', 'huff', 'raven'];
+type houseName = 'sly' | 'gryff' | 'huff' | 'raven';
 const commands = [
 	'!add',
 	'!del',
@@ -35,6 +40,14 @@ const commands = [
 	'!letter',
 	'!close',
 	'!open',
+	'!add_house',
+	'!del_house',
+	'!edit_house',
+	'!list_house',
+	'!sly',
+	'!gryff',
+	'!huff',
+	'!raven',
 ];
 
 const getTypeMessage = (msg: proto.IWebMessageInfo): string => {
@@ -92,10 +105,10 @@ export const wbotBotMessageListener = async (sock: Session) => {
 
 			messages.forEach(async (msg) => {
 				if (!msg.message) return;
-
-				if (!msg?.message?.conversation) return;
-
-				const msgText = msg?.message?.conversation;
+				console.log({ teste: msg?.message?.extendedTextMessage?.text });
+				if (!msg?.message?.conversation && !msg?.message?.extendedTextMessage?.text) return;
+				console.log('oi	');
+				const msgText = msg?.message?.conversation || msg?.message?.extendedTextMessage?.text;
 				const isValid = isValidMsg(msg);
 				if (!isValid) {
 					return;
@@ -161,6 +174,17 @@ export const wbotBotMessageListener = async (sock: Session) => {
 						const commandContent = msgText?.split(' ')[2];
 						console.log({ command, commandContent, commandType });
 						// get all string between quotes and remove quotes
+
+						if (!commandType) {
+							await sendMessageWTyping(
+								{
+									text: `Comando inválido`,
+								},
+								remoteJid,
+								sock
+							);
+							return;
+						}
 
 						if (!commandType?.startsWith('$') && command === '!add') {
 							await sendMessageWTyping(
@@ -280,6 +304,109 @@ export const wbotBotMessageListener = async (sock: Session) => {
 								});
 
 								console.log('grupo aberto com sucesso');
+								return;
+							case '!add_house':
+								const number = msgText?.split(' ')[1];
+								const houseName = msgText?.split(' ')[2];
+								console.log({ houseName });
+								if (!number || !houseName) {
+									await sendMessageWTyping(
+										{
+											text: `Adicione o número e o nome da casa`,
+										},
+										remoteJid,
+										sock
+									);
+									return;
+								}
+
+								if (!houseNamesArray.includes(houseName)) {
+									await sendMessageWTyping(
+										{
+											text: `Nome incorreto da comunal`,
+										},
+										remoteJid,
+										sock
+									);
+									return;
+								}
+
+								const newUser = await handleAddHouseMember({
+									number,
+									house: houseName as houseName,
+									groupData: groupMeta,
+									sock,
+									prisma,
+								});
+
+								console.log({ newUser });
+								return;
+							case '!del_house':
+								const numberDel = msgText?.split(' ')[1];
+
+								if (!numberDel) {
+									await sendMessageWTyping(
+										{
+											text: `Número necessário para remover membro`,
+										},
+										remoteJid,
+										sock
+									);
+									return;
+								}
+
+								await handleDeleteHouseMember({
+									number: numberDel,
+									groupData: groupMeta,
+									sock,
+									prisma,
+								});
+
+								return;
+							case '!edit_house':
+								const numberEdit = msgText?.split(' ')[1];
+								const houseNameEdit = msgText?.split(' ')[2];
+
+								if (!numberEdit || !houseNameEdit) {
+									await sendMessageWTyping(
+										{
+											text: `Número e nome da comunal necessários para editar`,
+										},
+										remoteJid,
+										sock
+									);
+									return;
+								}
+
+								if (!houseNamesArray.includes(houseNameEdit)) {
+									await sendMessageWTyping(
+										{
+											text: `Nome incorreto da comunal`,
+										},
+										remoteJid,
+										sock
+									);
+									return;
+								}
+
+								await handleEditHouseMember({
+									number: numberEdit,
+									house: houseNameEdit as houseName,
+									groupData: groupMeta,
+									sock,
+									prisma,
+								});
+
+								return;
+							case '!list_house':
+								return;
+							case '!sly':
+								return;
+							case '!gryff':
+								return;
+							case '!raven':
+								return;
+							case '!huff':
 								return;
 							default:
 								break;

@@ -1,4 +1,3 @@
-import { Commands } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 
 interface handleAddCommandInterface {
