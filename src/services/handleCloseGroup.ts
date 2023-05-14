@@ -29,7 +29,7 @@ const handleChangeGroupSettings = async (params: handleGroupInterface) => {
 			__dirname,
 			'..',
 			'static',
-			`${files[Math.floor(Math.random() * files.length)]}.ogg`
+			`${files[Math.floor(Math.random() * files.length)]}.mpeg`
 		);
 		console.log({ audioPath });
 		await sendMessageWTyping(
@@ -37,7 +37,7 @@ const handleChangeGroupSettings = async (params: handleGroupInterface) => {
 				audio: {
 					url: audioPath,
 				},
-				mimetype: 'audio/ogg',
+				mimetype: 'audio/mpeg',
 			},
 			groupData.id,
 			sock

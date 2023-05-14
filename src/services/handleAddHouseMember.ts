@@ -3,7 +3,7 @@ import getHouse from '../utils/getHouse';
 import { Session } from './wbotService';
 import { GroupMetadata } from '@adiwajshing/baileys';
 import sendMessageWTyping from '../utils/sendMessageWtyping';
-import getHouseEmoji from '../utils/getHouseEmoji';
+import { getHouseEmoji } from '../utils/getHouseEmoji';
 
 interface handleAddHouseMemberInterface {
 	groupData: GroupMetadata;
@@ -66,7 +66,9 @@ const handleAddHouseMember = async (params: handleAddHouseMemberInterface) => {
 		const mentionString = `@${serializedId.split('@')[0]}`;
 		await sendMessageWTyping(
 			{
-				text: `${mentionString} adicionadx a ${getHouse(house)} ${getHouseEmoji(house)} com sucesso!`,
+				text: `${mentionString} adicionadx a _*${getHouse(house)}*_ ${getHouseEmoji(
+					house
+				)} com sucesso!`,
 				mentions: [serializedId],
 			},
 			groupData.id,

@@ -15,6 +15,9 @@ import handleChangeGroupSettings from './handleCloseGroup';
 import handleAddHouseMember from './handleAddHouseMember';
 import handleDeleteHouseMember from './handleDeleteHouseMember';
 import handleEditHouseMember from './handleEditHouseMember';
+import handleListHouseMembers from './handleListHouseMemberCount';
+import handleMentionHouse from './handleMentionHouse';
+import handleRandomizeBoard from './handleRandomizeBoard';
 
 interface ImessageUpsert {
 	messages: proto.IWebMessageInfo[];
@@ -48,6 +51,7 @@ const commands = [
 	'!gryff',
 	'!huff',
 	'!raven',
+	'!board',
 ];
 
 const getTypeMessage = (msg: proto.IWebMessageInfo): string => {
@@ -175,17 +179,6 @@ export const wbotBotMessageListener = async (sock: Session) => {
 						console.log({ command, commandContent, commandType });
 						// get all string between quotes and remove quotes
 
-						if (!commandType) {
-							await sendMessageWTyping(
-								{
-									text: `Comando inválido`,
-								},
-								remoteJid,
-								sock
-							);
-							return;
-						}
-
 						if (!commandType?.startsWith('$') && command === '!add') {
 							await sendMessageWTyping(
 								{
@@ -206,7 +199,7 @@ export const wbotBotMessageListener = async (sock: Session) => {
 								if (!matchesCommand) return;
 								const commandWithoutQuotes = matchesCommand.map((cmd) => cmd.replace(/"/g, ''));
 								const newCommand = await handleAddCommand({
-									command: commandType,
+									command: commandType as string,
 									command_content: commandWithoutQuotes[0],
 									groupId: group.id,
 									prisma,
@@ -226,7 +219,7 @@ export const wbotBotMessageListener = async (sock: Session) => {
 							case '!del':
 								console.log('aqui');
 								const teste = await handleDeleteCommand({
-									command: commandType,
+									command: commandType as string,
 									groupId: group.id,
 									sock,
 									remoteJid,
@@ -399,14 +392,50 @@ export const wbotBotMessageListener = async (sock: Session) => {
 
 								return;
 							case '!list_house':
+								await handleListHouseMembers({
+									groupData: groupMeta,
+									sock,
+									prisma,
+								});
+
 								return;
 							case '!sly':
+								await handleMentionHouse({
+									groupData: groupMeta,
+									sock,
+									prisma,
+									house: 'Slytherin',
+								});
 								return;
 							case '!gryff':
+								await handleMentionHouse({
+									groupData: groupMeta,
+									sock,
+									prisma,
+									house: 'Gryffindor',
+								});
 								return;
 							case '!raven':
+								await handleMentionHouse({
+									groupData: groupMeta,
+									sock,
+									prisma,
+									house: 'Ravenclaw',
+								});
 								return;
 							case '!huff':
+								await handleMentionHouse({
+									groupData: groupMeta,
+									sock,
+									prisma,
+									house: 'Hufflepuff',
+								});
+								return;
+							case '!board':
+								await handleRandomizeBoard({
+									groupData: groupMeta,
+									sock,
+								});
 								return;
 							default:
 								break;
