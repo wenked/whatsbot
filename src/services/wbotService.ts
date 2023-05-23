@@ -17,6 +17,7 @@ import makeWASocket, {
 import pino from 'pino';
 import { PrismaClient, Whatsapp } from '@prisma/client';
 import socket from './socket';
+import removeSessionService from './removeSessionService';
 
 // external map to store retry counts of messages when decryption/encryption fails
 // keep this out of the socket itself, so as to prevent a message decryption/encryption loop across socket restarts
@@ -53,6 +54,7 @@ export const removeWbot = async (whatsappId: number, isLogout = true): Promise<v
 			}
 
 			sessions.splice(sessionIndex, 1);
+			await removeSessionService(whatsappId);
 		}
 	} catch (err: any) {
 		console.error(err);
@@ -92,7 +94,7 @@ export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
 
 				sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
 					const disconect = (lastDisconnect?.error as Boom)?.output?.statusCode;
-					console.log({ lastDisconnect });
+					console.log({ whatsapp, lastDisconnect });
 					console.log({ connection });
 					if (connection === 'close') {
 						// reconnect if not logged out
@@ -107,7 +109,8 @@ export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
 							initWbot(whatsapp);
 						} else {
 							console.log('Connection closed. You are logged out.');
-							removeWbot(whatsapp.id, false);
+							await removeWbot(whatsapp.id, false);
+							console.log('Reconnecting...');
 							initWbot(whatsapp);
 						}
 					}

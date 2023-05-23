@@ -1,55 +1,51 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-  relationMode = "prisma"
+  relationMode      = "prisma"
 }
 
 model Whatsapp {
-  id        Int      @id @default(autoincrement())
-  name      String
-  status     String
+  id            Int      @id @default(autoincrement())
+  name          String
+  status        String
   serialized_id String?
-  qr_code String?     @db.VarChar(1001)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  qr_code       String?  @db.VarChar(1001)
 }
 
 model Group {
-  id        Int      @id @default(autoincrement())
-  name      String
+  id                  Int        @id @default(autoincrement())
+  name                String
+  group_id            String
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
   owner_serialized_id String
-  group_id String
-  commands Commands[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  commands            Commands[]
 }
 
 model Commands {
-  id        Int      @id @default(autoincrement())
-  command_name      String
+  id              Int      @id @default(autoincrement())
+  command_name    String
   command_content String   @db.VarChar(2000)
-  group  Group @relation(fields: [group_id], references: [id])
-  group_id Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  group_id        Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  group           Group    @relation(fields: [group_id], references: [id])
 
   @@index([group_id])
 }
 
 model Member {
-  id    Int     @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   serialized_id String  @unique
-  name  String?
-  house  House    
+  name          String?
+  house         House
 }
 
 enum House {
@@ -58,4 +54,3 @@ enum House {
   Hufflepuff
   Ravenclaw
 }
-

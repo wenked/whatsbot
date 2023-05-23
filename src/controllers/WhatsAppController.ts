@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { initWbot, removeWbot } from '../services/wbotService';
 import fs from 'fs';
 import path from 'path';
+import removeSessionService from '../services/removeSessionService';
 const prisma = new PrismaClient();
 
 export const storeWhatsApp = async (req: Request, res: Response) => {
@@ -34,14 +35,7 @@ export const deleteWhatsApp = async (req: Request, res: Response) => {
 
 		await removeWbot(Number(req.params.id));
 
-		const sessionDirectory = path.join(
-			__dirname,
-			`../../sessions/baileys_auth_info-${req.params.id}`
-		);
-
-		if (fs.existsSync(sessionDirectory)) {
-			fs.rmdirSync(sessionDirectory, { recursive: true });
-		}
+		await removeSessionService(Number(req.params.id));
 
 		return res.status(200).json({
 			message: 'WhatsApp session deleted',
